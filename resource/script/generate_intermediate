@@ -19,41 +19,40 @@ test -d "$dir/private"   || mkdir       "$dir/private"
 test -f "$dir/serial"    || echo '00' > "$dir/serial"
 test -f "$dir/index.txt" || touch       "$dir/index.txt"
 
-PASSWORD='password'
 # パスフレーズ読み取り
-#PASSWORD=''
-#read -s -p "Passphrase: " PASSWORD
-#echo ''
-#
-## 鍵生成
-#openssl genrsa \
-#  -batch \
-#  -passout "pass:${PASSWORD}" \
-#  -out "$dir/private/private_key.pem" \
-#  -aes-256-cbc \
-#  4096
-#
-#if [ $? -ne 0 ]; then
-#  echo 'Failed to generate ras key.' > /dev/stderr
-#  exit 1
-#fi
-#
-## リクエスト
-#openssl req \
-#  -batch -new -utf8  \
-#  -config "${CONFIG_DIR}/openssl.cfg" \
-#  -section inter_ca_req \
-#  -extensions inter_ca \
-#  -passin "pass:${PASSWORD}" \
-#  -keyform PEM \
-#  -key "$dir/private/private_key.pem" \
-#  -outform PEM \
-#  -out "$dir/inter_ca.csr"
-#
-#if [ $? -ne 0 ]; then
-#  echo 'Failed to generate requeset.' > /dev/stderr
-#  exit 1
-#fi
+PASSWORD=''
+read -s -p "Passphrase: " PASSWORD
+echo ''
+
+# 鍵生成
+openssl genrsa \
+  -batch \
+  -passout "pass:${PASSWORD}" \
+  -out "$dir/private/private_key.pem" \
+  -aes-256-cbc \
+  4096
+
+if [ $? -ne 0 ]; then
+  echo 'Failed to generate ras key.' > /dev/stderr
+  exit 1
+fi
+
+# リクエスト
+openssl req \
+  -batch -new -utf8  \
+  -config "${CONFIG_DIR}/openssl.cfg" \
+  -section inter_ca_req \
+  -extensions inter_ca \
+  -passin "pass:${PASSWORD}" \
+  -keyform PEM \
+  -key "$dir/private/private_key.pem" \
+  -outform PEM \
+  -out "$dir/inter_ca.csr"
+
+if [ $? -ne 0 ]; then
+  echo 'Failed to generate requeset.' > /dev/stderr
+  exit 1
+fi
 
 # 署名
 openssl ca \
@@ -87,5 +86,4 @@ if [ $? -ne 0 ]; then
 fi
 
 # 確認
-# openssl rsa -noout -text -passin "pass:${PASSWORD}" -in ./inter_ca.private_key.pem
-# openssl x509 -batch -noout -text -in ./inter_ca.crt
+# openssl x509 -batch -noout -text -in "$dir/certs/inter_ca.crt"

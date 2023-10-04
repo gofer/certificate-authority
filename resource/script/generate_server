@@ -1,44 +1,85 @@
+#!/bin/sh
+
+# 環境の読み出し
+if [ -f "$(dirname $0)/.env" ]; then
+  source $(dirname $0)/.env
+fi
+
+# 設定ファイルのディレクトリ
+CONFIG_DIR=${CONFIG_DIR:=.}
+
+# 初期化
+root_ca_dir='/etc/ssl/root_ca'
+ca_dir='/etc/ssl/inter_ca'
+
+# パスフレーズ読み取り
+PASSWORD=''
+read -s -p "Passphrase: " PASSWORD
+echo ''
+
+# 鍵生成
 openssl genrsa \
+  -batch \
+  -passout "pass:${PASSWORD}" \
   -out apps.localdomain.private_key.pem \
   -aes-256-cbc \
   4096
 
+if [ $? -ne 0 ]; then
+  echo 'Failed to generate ras key.' > /dev/stderr
+  exit 1
+fi
 
+# リクエスト
 openssl req -new -utf8 \
+  -batch \
   -subj '/C=JP/CN=apps.localdomain' \
   -addext 'subjectAltName = DNS:apps.localdomain,DNS:app1.apps.localdomain' \
+  -passin "pass:${PASSWORD}" \
   -key ./apps.localdomain.private_key.pem \
   -out apps.localdomain.csr
 
+if [ $? -ne 0 ]; then
+  echo 'Failed to generate requeset.' > /dev/stderr
+  exit 1
+fi
 
-openssl req -noout -text -in apps.localdomain.csr
+# 確認
+# openssl req -noout -text -in apps.localdomain.csr
 
-
+# 署名
 openssl ca \
   -config conf/openssl.cfg \
   -section CA_inter \
-  -extensions v3_inter_ca_for_servers \
   -md sha256 \
   -days 366 \
+  -passin "pass:${PASSWORD}" \
+  -keyfile "${ca_dir}/private/private_key.pem" \
+  -cert "${ca_dir}/certs/inter_ca.crt" \
   -in apps.localdomain.csr \
   -out apps.localdomain.crt
 
+# 確認
+# openssl x509 -noout -text -in apps.localdomain.crt
 
+
+# チェーン生成
 openssl crl2pkcs7 \
   -nocrl \
-  -certfile ../root_ca/certs/root_ca.crt \
-  -certfile ../inter_ca/certs/inter_ca.crt \
   -certfile ./apps.localdomain.crt \
+  -certfile "${ca_dir}/certs/inter_ca.crt" \
+  -certfile "${root_ca_dir}/certs/root_ca.crt" \
   -out chain.p7b
 
 
 openssl crl2pkcs7 \
   -nocrl \
-  -certfile ../root_ca/certs/root_ca.crt \
-  -certfile ../inter_ca/certs/inter_ca.crt \
-  -out ca_chain.p7b
+  -certfile ./apps.localdomain.crt \
+  -certfile "../inter_ca/certs/inter_ca.crt" \
+  -certfile "../root_ca/certs/root_ca.crt" \
+  -out chain.p7b
 
-
+# CRL生成
 openssl ca \
   -gencrl \
   -md sha256 \
@@ -55,4 +96,3 @@ openssl ca \
   -section CA_inter \
   -extensions v3_inter_ca \
   -out intermediate.crl
-
