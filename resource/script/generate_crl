@@ -8,22 +8,31 @@ fi
 # 設定ファイルのディレクトリ
 CONFIG_DIR=${CONFIG_DIR:=.}
 
+# パスフレーズ読み取り
+PASSWORD=''
+read -s -p "Passphrase: " PASSWORD
+echo ''
+
 # CRL生成
 
 ## ルートCA
 openssl ca \
+  -batch \
   -gencrl \
   -md sha256 \
   -config "${CONFIG_DIR}/openssl.cfg" \
   -section CA_root \
   -extensions v3_root_ca \
+  -passin "pass:${PASSWORD}" \
   -out root_ca.crl
 
 ## 中間CA
 openssl ca \
+  -batch \
   -gencrl \
   -md sha256 \
   -config "${CONFIG_DIR}/openssl.cfg" \
   -section CA_inter \
   -extensions v3_inter_ca \
+  -passin "pass:${PASSWORD}" \
   -out inter_ca.crl
