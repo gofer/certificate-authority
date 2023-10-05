@@ -16,6 +16,7 @@ test -d "$dir/newcerts"  || mkdir       "$dir/newcerts"
 test -d "$dir/crl"       || mkdir       "$dir/crl"
 test -d "$dir/private"   || mkdir       "$dir/private"
 test -f "$dir/serial"    || echo '00' > "$dir/serial"
+test -f "$dir/crlnum"    || echo '00' > "$dir/crlnum"
 test -f "$dir/index.txt" || touch       "$dir/index.txt"
 
 # パスフレーズ読み取り
