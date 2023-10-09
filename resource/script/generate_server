@@ -81,3 +81,8 @@ openssl crl2pkcs7 \
   -certfile "${ca_dir}/certs/inter_ca.crt" \
   -certfile "${root_ca_dir}/certs/root_ca.crt" \
   -out "${DN}.chain.p7b"
+
+
+cat "${DN}.crt" > "${DN}.chain.crt"
+cat "${ca_dir}/certs/inter_ca.crt" >> "${DN}.chain.crt"
+cat "${root_ca_dir}/certs/root_ca.crt" >> "${DN}.chain.crt"
