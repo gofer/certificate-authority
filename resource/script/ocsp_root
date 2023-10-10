@@ -1,0 +1,34 @@
+#!/bin/sh
+
+# ライブラリ読み出し
+source "$(dirname $0)/library.sh"
+
+# 環境の読み出し
+if [ -f "$(dirname $0)/.env" ]; then
+  source "$(dirname $0)/.env"
+fi
+
+# 設定ファイルのディレクトリ
+CONFIG_DIR="${CONFIG_DIR:=.}"
+
+# 初期化
+ROOT_CA_DIR="${ROOT_CA_DIR:='/etc/ssl/root_ca'}"
+
+ROOT_CA_OCSP_DOMAIN="${ROOT_CA_OCSP_DOMAIN:='ca.localdomain'}"
+ROOT_CA_OCSP_PORT="${ROOT_CA_OCSP_PORT:=2560}"
+
+# パスフレーズ読み取り
+PASSWORD=''
+readPassword \
+  "Input root CA passphrase: " \
+  PASSWORD
+
+# OCSPサーバー
+openssl ocsp \
+  -url "$ROOT_CA_OCSP_DOMAIN:$ROOT_CA_OCSP_PORT" \
+  -port "$ROOT_CA_OCSP_PORT" \
+  -passin "pass:$PASSWORD" \
+  -index "$ROOT_CA_DIR/index.txt" \
+  -rkey "$ROOT_CA_DIR/private/private_key.pem" \
+  -rsigner "$ROOT_CA_DIR/certs/root_ca.crt" \
+  -CA "$ROOT_CA_DIR/certs/root_ca.crt"

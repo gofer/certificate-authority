@@ -1,0 +1,34 @@
+#!/bin/sh
+
+# ライブラリ読み出し
+source "$(dirname $0)/library.sh"
+
+# 環境の読み出し
+if [ -f "$(dirname $0)/.env" ]; then
+  source "$(dirname $0)/.env"
+fi
+
+# 設定ファイルのディレクトリ
+CONFIG_DIR="${CONFIG_DIR:=.}"
+
+# 初期化
+INTER_CA_DIR="${INTER_CA_DIR:='/etc/ssl/inter_ca'}"
+
+INTER_CA_OCSP_DOMAIN="${INTER_CA_OCSP_DOMAIN:='ca.localdomain'}"
+INTER_CA_OCSP_PORT="${INTER_CA_OCSP_PORT:=2561}"
+
+# パスフレーズ読み取り
+PASSWORD=''
+readPassword \
+  "Input root CA passphrase: " \
+  PASSWORD
+
+# OCSPサーバー
+openssl ocsp \
+  -url "$INTER_CA_OCSP_DOMAIN:$INTER_CA_OCSP_PORT" \
+  -port "$INTER_CA_OCSP_PORT" \
+  -passin "pass:$PASSWORD" \
+  -index "$INTER_CA_DIR/index.txt" \
+  -rkey "$INTER_CA_DIR/private/private_key.pem" \
+  -rsigner "$INTER_CA_DIR/certs/inter_ca.crt" \
+  -CA "$INTER_CA_DIR/certs/inter_ca.crt"
