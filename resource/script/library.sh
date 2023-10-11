@@ -22,7 +22,6 @@ verifyPassword() {
   readPassword "$prompt2" password2
 
   if [ "$password1" != "$password2" ]; then
-    echo 'Password mismatch.' > /dev/stderr
     return 1
   fi
 

@@ -21,16 +21,22 @@ fi
 initializeCADir "$INTER_CA_DIR"
 
 # パスフレーズ読み取り
-ROOT_CA_PASSWORD=''
-readPassword \
-  "Input root CA passphrase: " \
-  ROOT_CA_PASSWORD
+ROOT_CA_PASSWORD=${ROOT_CA_PASSWORD:=''}
+if [ "$ROOT_CA_PASSWORD" == '' ]; then
+  readPassword \
+    'Input root CA passphrase:' \
+    ROOT_CA_PASSWORD
+fi
 
-INTER_CA_PASSWORD=''
 verifyPassword \
-  "Input intermediate CA passphrase: " \
-  "Verify intermediate CA passphrase: " \
+  'Input intermediate CA passphrase:' \
+  'Verify intermediate CA passphrase:' \
   INTER_CA_PASSWORD
+
+if [ $? -ne 0 ]; then
+  echo 'Password mismatch' > /dev/stderr
+  exit 1
+fi
 
 
 # 鍵生成

@@ -17,20 +17,27 @@ INTER_CA_DIR="${INTER_CA_DIR:='/etc/ssl/inter_ca'}"
 
 # ドメイン名(DN; Distinguished Name)
 DN=${DN:='apps.localdomain'}
-SUBJECT="/C=JP/CN=$DN"
-SAN="DNS:$DN,DNS:app1.apps.localdomain"
+SUBJECT=${SUBJECT:="/C=JP/CN=$DN"}
+SAN=${SAN:="DNS:$DN,DNS:app1.apps.localdomain"}
 
 # パスフレーズ読み取り
-INTER_CA_PASSWORD=''
-readPassword \
-  "Input intermediate CA passphrase: " \
-  INTER_CA_PASSWORD
+INTER_CA_PASSWORD=${INTER_CA_PASSWORD:=''}
+if [ "$INTER_CA_PASSWORD" == '' ]; then
+  readPassword \
+    "Input intermediate CA passphrase: " \
+    INTER_CA_PASSWORD
+fi
 
 PASSWORD=''
 verifyPassword \
-  "Input private key passphrase: " \
-  "Verify private key passphrase: " \
+  'Input private key passphrase:' \
+  'Verify private key passphrase:' \
   PASSWORD
+
+if [ $? -ne 0 ]; then
+  echo 'Password mismatch' > /dev/stderr
+  exit 1
+fi
 
 
 # 鍵生成
@@ -53,6 +60,7 @@ openssl req -new -utf8 \
   -subj "$SUBJECT" \
   -addext "subjectAltName = $SAN" \
   -passin "pass:$PASSWORD" \
+  -keyform PEM \
   -key "$DN.private_key.pem" \
   -out "$DN.csr"
 
@@ -71,6 +79,7 @@ openssl ca \
   -md sha256 \
   -days 366 \
   -passin "pass:$INTER_CA_PASSWORD" \
+  -keyform PEM \
   -keyfile "$INTER_CA_DIR/private/private_key.pem" \
   -cert "$INTER_CA_DIR/certs/inter_ca.crt" \
   -in "$DN.csr" \

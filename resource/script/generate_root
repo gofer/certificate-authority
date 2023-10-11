@@ -21,8 +21,14 @@ initializeCADir "$ROOT_CA_DIR"
 # パスフレーズ読み取り
 PASSWORD=''
 verifyPassword \
-  "Input root CA passphrase: " \
+  'Input root CA passphrase:' \
+  'Verify root CA passphrase:' \
   PASSWORD
+
+if [ $? -ne 0 ]; then
+  echo 'Password mismatch' > /dev/stderr
+  exit 1
+fi
 
 
 # 鍵生成
