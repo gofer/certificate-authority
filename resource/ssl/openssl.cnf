@@ -1,4 +1,4 @@
-HOME     = ..
+HOME     = .
 RANDFILE = $ENV::HOME/.rnd
 
 [ ca ]
@@ -57,6 +57,7 @@ default_days      = 1825
 [ policy_match ]
 countryName             = match
 stateOrProvinceName     = optional
+localityName		        = optional
 organizationName        = optional
 organizationalUnitName  = optional
 commonName              = supplied
@@ -72,7 +73,7 @@ string_mask        = utf8only
 [ req_distinguished_name ]
 countryName            = JP
 stateOrProvinceName    = Tokyo
-localityName           = Chiyoda
+localityName           = Chiyoda-ku
 0.organizationName     = localdomain
 organizationalUnitName = PKI manager
 commonName             = localdomain Root CA
@@ -86,7 +87,7 @@ string_mask        = utf8only
 [ req_RootCA_distinguished_name ]
 countryName            = JP
 stateOrProvinceName    = Hiroshima
-localityName           = Hatsukaichi-city
+localityName           = Hatsukaichi
 0.organizationName     = localdomain
 organizationalUnitName = Root CA
 commonName             = localdomain Root CA
@@ -107,7 +108,7 @@ string_mask        = utf8only
 [ inter_ca_req_distinguished_name ]
 countryName            = JP
 stateOrProvinceName    = Hiroshima
-localityName           = Hatsukaichi-city
+localityName           = Hatsukaichi
 0.organizationName     = localdomain
 organizationalUnitName = Intermediate CA
 commonName             = localdomain Intermediate CA
@@ -119,7 +120,7 @@ authorityKeyIdentifier = keyid:always, issuer
 basicConstraints       = critical, CA:TRUE, pathlen:0
 keyUsage               = critical, digitalSignature, cRLSign, keyEncipherment, keyCertSign
 crlDistributionPoints  = URI:http://ca.localdomain/inter_ca.crl
-authorityInfoAccess   = OCSP;URI:http://ca.localdomain:2561
+authorityInfoAccess    = OCSP;URI:http://ca.localdomain:2561
 
 [ usr ]
 subjectKeyIdentifier   = hash
@@ -136,7 +137,7 @@ basicConstraints       = CA:FALSE
 keyUsage               = digitalSignature, keyAgreement, keyEncipherment
 extendedKeyUsage       = serverAuth
 crlDistributionPoints  = URI:http://ca.localdomain/inter_ca.crl
-authorityInfoAccess   = OCSP;URI:http://ca.localdomain:2561
+authorityInfoAccess    = OCSP;URI:http://ca.localdomain:2561
 
 [ ocsp ]
 subjectKeyIdentifier   = hash
@@ -145,4 +146,4 @@ basicConstraints       = CA:FALSE
 keyUsage               = critical, digitalSignature, keyAgreement, keyEncipherment, nonRepudiation
 extendedKeyUsage       = critical, OCSPSigning
 #noCheck=yes
-authorityInfoAccess    = OCSP;URI:http://ocsp.hogetrust.com:2560
+authorityInfoAccess    = OCSP;URI:http://ca.localdomain:2560

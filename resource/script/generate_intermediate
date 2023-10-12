@@ -3,40 +3,49 @@
 # ライブラリ読み出し
 source "$(dirname $0)/library.sh"
 
-# 環境の読み出し
-if [ -f "$(dirname $0)/.env" ]; then
-  source "$(dirname $0)/.env"
+
+# 機密情報の読み出し
+if [ "$SECRET_FILE" != '' -a -f "$SECRET_FILE" ]; then
+  source "$SECRET_FILE"
 fi
 
-# 設定ファイルのディレクトリ
-CONFIG_DIR="${CONFIG_DIR:=.}"
-
-# 初期化
-ROOT_CA_DIR="${ROOT_CA_DIR:='/etc/ssl/root_ca'}"
-INTER_CA_DIR="${INTER_CA_DIR:='/etc/ssl/inter_ca'}"
-
-if [ ! -d "$INTER_CA_DIR" ]; then
-  mkdir "$INTER_CA_DIR"
-fi
-initializeCADir "$INTER_CA_DIR"
 
 # パスフレーズ読み取り
-ROOT_CA_PASSWORD=${ROOT_CA_PASSWORD:=''}
+ROOT_CA_PASSWORD="${ROOT_CA_PASSWORD:=""}"
 if [ "$ROOT_CA_PASSWORD" == '' ]; then
   readPassword \
     'Input root CA passphrase:' \
     ROOT_CA_PASSWORD
 fi
+echo "ROOT_CA_PASSWORD: $ROOT_CA_PASSWORD"
 
-verifyPassword \
-  'Input intermediate CA passphrase:' \
-  'Verify intermediate CA passphrase:' \
-  INTER_CA_PASSWORD
+INTER_CA_PASSWORD="${INTER_CA_PASSWORD:=""}"
+if [ "$INTER_CA_PASSWORD" == '' ]; then
+  verifyPassword \
+    'Input intermediate CA passphrase:' \
+    'Verify intermediate CA passphrase:' \
+    INTER_CA_PASSWORD
+
+  if [ $? -ne 0 ]; then
+    echo 'Password mismatch' > /dev/stderr
+    exit 1
+  fi
+fi
 
 if [ $? -ne 0 ]; then
   echo 'Password mismatch' > /dev/stderr
   exit 1
 fi
+
+
+# 初期化
+ROOT_CA_DIR="${ROOT_CA_DIR:="/etc/ssl/root_ca"}"
+INTER_CA_DIR="${INTER_CA_DIR:="/etc/ssl/inter_ca"}"
+
+if [ ! -d "$INTER_CA_DIR" ]; then
+  mkdir "$INTER_CA_DIR"
+fi
+initializeCADir "$INTER_CA_DIR"
 
 
 # 鍵生成
@@ -56,14 +65,14 @@ fi
 # リクエスト
 openssl req \
   -batch -new -utf8  \
-  -config "$CONFIG_DIR/openssl.cfg" \
+  -config "$CONFIG_FILE" \
   -section inter_ca_req \
   -extensions inter_ca \
   -passin "pass:$INTER_CA_PASSWORD" \
   -keyform PEM \
   -key "$INTER_CA_DIR/private/private_key.pem" \
   -outform PEM \
-  -out "$INTER_CA_DIR/inter_ca.csr"
+  -out "$ROOT_CA_DIR/requests/inter_ca.csr"
 
 if [ $? -ne 0 ]; then
   echo 'Failed to generate requeset.' > /dev/stderr
@@ -74,11 +83,11 @@ fi
 # 署名
 openssl ca \
   -batch \
-  -config "$CONFIG_DIR/openssl.cfg" \
+  -config "$CONFIG_FILE" \
   -section CA_inter \
   -extensions inter_ca \
   -md sha256 \
-  -in "$INTER_CA_DIR/inter_ca.csr" \
+  -in "$ROOT_CA_DIR/requests/inter_ca.csr" \
   -passin "pass:$ROOT_CA_PASSWORD" \
   -keyform PEM \
   -keyfile "$ROOT_CA_DIR/private/private_key.pem" \

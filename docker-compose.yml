@@ -1,5 +1,5 @@
 services:
-  nsd:
+  certificate-authority:
     image: certificate_authority
     build:
       context: .
@@ -7,9 +7,12 @@ services:
     container_name: certificate-authority
     hostname: ca.localdomain
     ports:
+      - 80
       - "2560-2561:2560-2561"
-    volumes:
-      - ./data:/etc/ssl/test:rw
+    env_file:
+      - .env
+    secrets:
+      - secret
     restart: always
     deploy:
       mode: global
@@ -18,3 +21,7 @@ services:
           cpus: '0.50'
           memory: 128M
           pids: 32
+
+secrets:
+  secret:
+    file: .secret

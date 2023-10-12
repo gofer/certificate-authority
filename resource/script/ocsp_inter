@@ -3,19 +3,12 @@
 # ライブラリ読み出し
 source "$(dirname $0)/library.sh"
 
-# 環境の読み出し
-if [ -f "$(dirname $0)/.env" ]; then
-  source "$(dirname $0)/.env"
+
+# 機密情報の読み出し
+if [ "$SECRET_FILE" != '' -a -f "$SECRET_FILE" ]; then
+  source "$SECRET_FILE"
 fi
 
-# 設定ファイルのディレクトリ
-CONFIG_DIR="${CONFIG_DIR:=.}"
-
-# 初期化
-INTER_CA_DIR="${INTER_CA_DIR:='/etc/ssl/inter_ca'}"
-
-INTER_CA_OCSP_DOMAIN="${INTER_CA_OCSP_DOMAIN:='ca.localdomain'}"
-INTER_CA_OCSP_PORT="${INTER_CA_OCSP_PORT:=2561}"
 
 # パスフレーズ読み取り
 INTER_CA_PASSWORD=${INTER_CA_PASSWORD:=''}
@@ -25,11 +18,19 @@ if [ "$INTER_CA_PASSWORD" == '' ]; then
     INTER_CA_PASSWORD
 fi
 
+
+# 初期化
+INTER_CA_DIR="${INTER_CA_DIR:="/etc/ssl/inter_ca"}"
+
+INTER_CA_OCSP_DOMAIN="${INTER_CA_OCSP_DOMAIN:="ca.localdomain"}"
+INTER_CA_OCSP_PORT="${INTER_CA_OCSP_PORT:=2561}"
+
+
 # OCSPサーバー
 openssl ocsp \
   -url "$INTER_CA_OCSP_DOMAIN:$INTER_CA_OCSP_PORT" \
   -port "$INTER_CA_OCSP_PORT" \
-  -timeout 10 \
+  -timeout $OCSP_TIMEOUT \
   -passin "pass:$INTER_CA_PASSWORD" \
   -index "$INTER_CA_DIR/index.txt" \
   -rkey "$INTER_CA_DIR/private/private_key.pem" \
